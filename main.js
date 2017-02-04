@@ -30,26 +30,17 @@
             $('#time').text(msg);
         }
         
-        if (topic == "/AOI/data") {
+        if (topic == "/MELON/status") {
            var vals = msg.split(",");
-           console.log(vals);
+//           console.log(vals);
            if (vals[0] == '1') $('#r1_status').text('START'); else $('#r1_status').text('STOP');                
-           if (vals[1] == '1') $('#r2_status').text('OPEN'); else $('#r2_status').text('CLOSE');                
+           if (vals[1] == '1') $('#r2_status').text('StART'); else $('#r2_status').text('STOP');                
            if (vals[2] == '1') $('#r3_status').text('OPEN'); else $('#r3_status').text('CLOSE');                
            if (vals[3] == '1') $('#r4_status').text('OPEN'); else $('#r4_status').text('CLOSE'); 
-            $('#volt').text(vals[11]+'V');
-            $('#m1').text(vals[12]+'%');               
-            $('#m2').text(vals[13]+'%');
-            $('#m3').text(vals[14]+'%');
-
-            $('#sp_1o').text(vals[4]+'%');
-            $('#sp_2o').text(vals[5]+'%');
-            $('#sp_3o').text(vals[6]+'%');
-            $('#tono').text(vals[7]+'s');
-            $('#toffo').text(vals[8]+'s');
-            $('#hstarto').text(vals[9]+':00');
-            $('#hstopo').text(vals[10]+':00');
-            
+           $('#pa_status').text(vals[4]);
+           $('#pb_status').text(vals[5]);
+           $('#mv_status').text(vals[6]);
+           $('#wv_status').text(vals[7]);
 
 
          }
@@ -64,6 +55,7 @@
         microgear.subscribe("/set");
         microgear.subscribe("/time");
         microgear.subscribe("/settime");
+        microgear.subscribe("/status");
     });
 
     microgear.on('present', function(event) {
@@ -127,10 +119,11 @@
     });
 
     $("#sp_submit").click(function () {
-        console.log($('#pa').val()+','+$('#pb').val()+','+$('#mv').val());
+        console.log($('#pa').val()+','+$('#pb').val()+','+$('#mv').val()+','+$('#mv').val());
         microgear.publish("/set/pa",$('#pa').val());
         microgear.publish("/set/pb",$('#pb').val());
         microgear.publish("/set/mv",$('#mv').val());
+        microgear.publish("/set/wv",$('#wv').val());
     });
 
     
