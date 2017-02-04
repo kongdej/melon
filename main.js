@@ -50,7 +50,7 @@
          }
          if (topic == "/MELON/status/sch/ab") {
            var vals = msg.split(",");
-           printMsg(topic,msg);         
+          // printMsg(topic,msg);         
            $("#ab1").attr("value", vals[0]);
            $("#ab2").attr("value", vals[1]);
            $("#ab3").attr("value", vals[2]);
@@ -63,7 +63,7 @@
 
          if (topic == "/MELON/status/sch/wt") {
            var vals = msg.split(",");
-           printMsg(topic,msg);         
+           //printMsg(topic,msg);         
            $("#wt1").attr("value", vals[0]);
            $("#wt2").attr("value", vals[1]);
            $("#wt3").attr("value", vals[2]);
