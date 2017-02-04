@@ -21,7 +21,8 @@
         var i = now.getMinutes();
         var s = now.getSeconds();
         var datetime = d + "/" + m + "/" + y + " " + h + ":" + i + ":" + s;
-       document.getElementById("data").innerHTML = '&nbsp;<i class="fa fa-bell-o"></i> '+ datetime + ' # ' +topic+' <i class="fa fa-ellipsis-h"></i> ' + msg;
+//       document.getElementById("data").innerHTML = '&nbsp;<i class="fa fa-bell-o"></i> '+ datetime + ' # ' +topic+' <i class="fa fa-ellipsis-h"></i> ' + msg;
+       document.getElementById("data").innerHTML = '&nbsp;<i class="fa fa-bell-o"></i> '+topic+' <i class="fa fa-ellipsis-h"></i> ' + msg;
     }
 
     microgear.on('message',function(topic,msg) {
