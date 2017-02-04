@@ -141,3 +141,5 @@ $('.timepicker').timepicker({
     dropdown: true,
     scrollbar: true
 });
+
+$('.clockpicker').clockpicker();
