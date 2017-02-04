@@ -139,47 +139,72 @@
                         <fieldset>
                         <legend>Schedule</legend>
                         <div class="row">
-                            <div class="col-lg-6">
+                            <div class="col-lg-2">
                                 <div class="row control-group">
                                     <div class="form-group col-xs-12 controls">
-                                        <label>Time ON (<span id="tono"></span>)</label>
-                                        <input type="text" class="form-control" placeholder="Second" id="ton" required data-validation-required-message="Please enter time in seconds.">
+                                        <label>Hour</label>
+                                        <input type="text" class="form-control" placeholder="" id="ton" required data-validation-required-message="Please enter time in seconds.">
                                         <p class="help-block text-danger"></p>
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-lg-6">                            
+                            <div class="col-lg-2">                            
                                 <div class="row control-group">
                                     <div class="form-group col-xs-12 controls">
-                                        <label>Time OFF (<span id="toffo"></span>)</label>
-                                        <input type="text" class="form-control" placeholder="Second" id="toff" required data-validation-required-message="Please enter time in seconds.">
+                                        <label>Minute</label>
+                                        <input type="text" class="form-control" placeholder="" id="toff" required data-validation-required-message="Please enter time in seconds.">
                                         <p class="help-block text-danger"></p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-8">                            
+                                <div class="row control-group">
+                                    <div class="form-group col-xs-12 controls">
+                                        <label>Action</label>
+                                          <div>
+                                          <input type="radio" name="gender" value="male" checked> AB
+                                          <input type="radio" name="gender" value="female"> WTR
+                                          </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
+
+
                         <div class="row">
-                            <div class="col-lg-6">                
+                            <div class="col-lg-2">
                                 <div class="row control-group">
-                                    <div class="form-group col-xs-12  controls">
-                                        <label>Start Time (<span id="hstarto"></span>)</label>
-                                        <input type="text" class="form-control" placeholder="Hour" id="hstart" required data-validation-required-message="Please enter hour to start.">
+                                    <div class="form-group col-xs-12 controls">
+                                        <input type="text" class="form-control" placeholder="" id="ton" required data-validation-required-message="Please enter time in seconds.">
                                         <p class="help-block text-danger"></p>
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-lg-6">                
+                            <div class="col-lg-2">                            
                                 <div class="row control-group">
                                     <div class="form-group col-xs-12 controls">
-                                        <label>Stop Time (<span id="hstopo"></span>)</label>
-                                        <input type="text" class="form-control" placeholder="Hour" id="hstop" required data-validation-required-message="Please enter hour to stop.">
+                                        <input type="text" class="form-control" placeholder="" id="toff" required data-validation-required-message="Please enter time in seconds.">
                                         <p class="help-block text-danger"></p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-8">                            
+                                <div class="row control-group">
+                                    <div class="form-group col-xs-12 controls">
+                                          <div>
+                                          <input type="radio" name="gender" value="male" checked> AB
+                                          <input type="radio" name="gender" value="female"> WTR
+                                          </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
+
+
                         </fieldset>                        
+
                         <br>
+
                         <div id="success"></div>
                         <div class="row">
                             <div class="form-group col-xs-12">

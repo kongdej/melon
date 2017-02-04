@@ -34,14 +34,17 @@
            var vals = msg.split(",");
 //           console.log(vals);
            if (vals[0] == '1') $('#r1_status').text('START'); else $('#r1_status').text('STOP');                
-           if (vals[1] == '1') $('#r2_status').text('StART'); else $('#r2_status').text('STOP');                
+           if (vals[1] == '1') $('#r2_status').text('START'); else $('#r2_status').text('STOP');                
            if (vals[2] == '1') $('#r3_status').text('OPEN'); else $('#r3_status').text('CLOSE');                
            if (vals[3] == '1') $('#r4_status').text('OPEN'); else $('#r4_status').text('CLOSE'); 
            $('#pa_status').text(vals[4]);
            $('#pb_status').text(vals[5]);
            $('#mv_status').text(vals[6]);
            $('#wv_status').text(vals[7]);
-
+           $("#pa").attr("value", vals[4]);
+           $("#pb").attr("value", vals[5]);
+           $("#mv").attr("value", vals[6]);
+           $("#wv").attr("value", vals[7]);
 
          }
  
