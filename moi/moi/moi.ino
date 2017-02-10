@@ -128,87 +128,8 @@ void setup () {
   // NETPIE
   microgear.on(MESSAGE,onMsghandler);
   microgear.on(CONNECTED,onConnected);
-  
-  if (WiFi.begin(ssid, password)) {
-
-    while (WiFi.status() != WL_CONNECTED) {
-      delay(500);
-      Serial.print(".");
-    }
-
-    
-    ArduinoOTA.onStart([]() {
-      Serial.println("Start");
-    });
-    ArduinoOTA.onEnd([]() {
-      Serial.println("\nEnd");
-    });
-    ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
-      Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
-    });
-    ArduinoOTA.onError([](ota_error_t error) {
-      Serial.printf("Error[%u]: ", error);
-      if (error == OTA_AUTH_ERROR) Serial.println("Auth Failed");
-      else if (error == OTA_BEGIN_ERROR) Serial.println("Begin Failed");
-      else if (error == OTA_CONNECT_ERROR) Serial.println("Connect Failed");
-      else if (error == OTA_RECEIVE_ERROR) Serial.println("Receive Failed");
-      else if (error == OTA_END_ERROR) Serial.println("End Failed");
-    });
-    ArduinoOTA.begin();
-    
-    Serial.println("WiFi connected");
-    Serial.println("IP address: ");
-    Serial.println(WiFi.localIP());
-
-    //uncomment the line below if you want to reset token -->
-    microgear.resetToken();
-    microgear.init(GEARKEY, GEARSECRET, ALIAS);
-    microgear.connect(APPID);
-  }
-  
-  if (! rtc.begin()) {
-    Serial.println("Couldn't find RTC");
-    while (1);
-  }
-
-  if (rtc.lostPower()) {
-    Serial.println("RTC lost power, lets set the time!");
-    //rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
-    // rtc.adjust(DateTime(2014, 1, 21, 3, 0, 0));
-  }
-  //rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
-
-  for (int i=0;i<4;i++)
-    pinMode(relayPin[i], OUTPUT);
-
-  //SPTFFS
-  bool result = SPIFFS.begin();
-  Serial.println("SPIFFS opened: " + result);
-
-  if (!SPIFFS.exists("/setpoint.txt")) {
-      Serial.println("File doesn't exist yet. Creating it");
-      Serial.println("Format the file system");
-      SPIFFS.format();
-      savedata("/setpoint.txt","0,0,0,0");
-      savedata("/schedule.txt","0");
-  }
-  else {
-    readSetpoint();
-    readSchedule();
-  }
-
-  DateTime now = rtc.now();    
-  setTime(now.hour(),now.minute(),now.second(),now.day(),now.month(),now.year()-2000); //(h,m,d,) set time to Saturday 8:29:00am Jan 1 2011
-
-  // create the alarms, to trigger at specific times
-  for (int i=0;i<8;i++) {
-    if (sch_ab[i].h != -1)
-      alarm_ab_id[i] = Alarm.alarmRepeat(sch_ab[i].h,sch_ab[i].m,0, doWatering);
-    if (sch_wt[i].h != -1)
-      alarm_wt_id[i] = Alarm.alarmRepeat(sch_wt[i].h,sch_wt[i].m,0, doWaterOnly);
-  }
+ 
 }
-
 
 void loop(){
   ArduinoOTA.handle();
