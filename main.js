@@ -30,9 +30,15 @@
         return '0'+str;
       else 
         return str
-
     }
 
+    function tformat(t) {
+      var ts = t.split(':');
+      var h = (ts[0].length == 1) ? '0'+ts[0] : ts[0];
+      var m = (ts[1].length == 1) ? '0'+ts[1] : ts[1];
+
+      return h+':'+m;      
+    }
     microgear.on('message',function(topic,msg) {
         //printMsg(topic,msg);
         if (topic == "/MELON/time") {
@@ -65,28 +71,28 @@
          }
          if (topic == "/MELON/status/sch/ab") {
            var vals = msg.split(",");
-//           printMsg(topic,msg);         
-           $("#ab1").attr("value", vals[0]);
-           $("#ab2").attr("value", vals[1]);
-           $("#ab3").attr("value", vals[2]);
-           $("#ab4").attr("value", vals[3]);
-           $("#ab5").attr("value", vals[4]);
-           $("#ab6").attr("value", vals[5]);
-           $("#ab7").attr("value", vals[6]);
+         // printMsg(topic,msg);         
+           $("#ab1").attr("value", tformat(vals[0]));
+           $("#ab2").attr("value", tformat(vals[1]));
+           $("#ab3").attr("value", tformat(vals[2]));
+           $("#ab4").attr("value", tformat(vals[3]));
+           $("#ab5").attr("value", tformat(vals[4]));
+           $("#ab6").attr("value", tformat(vals[5]));
+           $("#ab7").attr("value", tformat(vals[6]));
            $("#ab8").attr("value", vals[7]);
          }
 
          if (topic == "/MELON/status/sch/wt") {
            var vals = msg.split(",");
            //printMsg(topic,msg);         
-           $("#wt1").attr("value", vals[0]);
-           $("#wt2").attr("value", vals[1]);
-           $("#wt3").attr("value", vals[2]);
-           $("#wt4").attr("value", vals[3]);
-           $("#wt5").attr("value", vals[4]);
-           $("#wt6").attr("value", vals[5]);
-           $("#wt7").attr("value", vals[6]);
-           $("#wt8").attr("value", vals[7]);
+           $("#wt1").attr("value", tformat(vals[0]));
+           $("#wt2").attr("value", tformat(vals[1]));
+           $("#wt3").attr("value", tformat(vals[2]));
+           $("#wt4").attr("value", tformat(vals[3]));
+           $("#wt5").attr("value", tformat(vals[4]));
+           $("#wt6").attr("value", tformat(vals[5]));
+           $("#wt7").attr("value", tformat(vals[6]));
+           $("#wt8").attr("value", tformat(vals[7]));
          }
     });
 
@@ -178,4 +184,11 @@
       microgear.publish("/set/sch",settings);
     });
 
+    $("#sdt_submit").click(function () {
+      var datetime = $('#datetime').val();
+      console.log(datetime);
+      microgear.publish("/set/datetime",datetime);
+    });
+
 $('.clockpicker').clockpicker();
+

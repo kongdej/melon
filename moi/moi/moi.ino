@@ -64,7 +64,7 @@ void onMsghandler(char *topic, uint8_t* msg, unsigned int msglen) {
      time_pb = getValue(stateStr, ',', 1).toInt();
      time_mv = getValue(stateStr, ',', 2).toInt();
      time_wv = getValue(stateStr, ',', 3).toInt();
-     savedata("setpoint.txt",stateStr);
+     savedata("/setpoint.txt",stateStr);
      readSetpoint();
   }
   
@@ -88,11 +88,25 @@ void onMsghandler(char *topic, uint8_t* msg, unsigned int msglen) {
         sch_wt[i].h = -1;
         sch_wt[i].m = -1;        
       }
-//      Serial.print(sch_ab[i].h);Serial.print(':');Serial.println(sch_ab[i].m);
-//      Serial.print(sch_wt[i].h);Serial.print(':');Serial.println(sch_wt[i].m);
+//      Serial.print(sch_ab[i].h);Serial.print(':');Serial.println(sch_ab[i].m);      Serial.print(sch_wt[i].h);Serial.print(':');Serial.println(sch_wt[i].m);
      }
-      savedata("schedule.txt",stateStr);
+      savedata("/schedule.txt",stateStr);
       readSchedule();
+  }
+  
+  if (String(topic) == "/MELON/set/datetime"){
+    String ds = getValue(stateStr,' ',0);
+    String ts = getValue(stateStr,' ',1);
+    int d = getValue(ds,'/',0).toInt();
+    int m = getValue(ds,'/',1).toInt();
+    int y = getValue(ds,'/',2).toInt();
+    int hh = getValue(ts,':',0).toInt();
+    int mm = getValue(ts,':',1).toInt();
+    Serial.print("set datetime = ");
+    Serial.printf("%d/%d/%d %d:%d",d,m,y,hh,mm);Serial.println();
+    rtc.adjust(DateTime(y,m,d,hh,mm,0));
+    DateTime now = rtc.now();  
+    setTime(now.hour(),now.minute(),now.second(),now.day(),now.month(),now.year()-2000); //(h,m,d,) set time to Saturday 8:29:00am Jan 1 2011
   }
   
   if (String(topic) == "/MELON/wtr") doWatering(); 
@@ -170,27 +184,18 @@ void setup () {
   //SPTFFS
   bool result = SPIFFS.begin();
   Serial.println("SPIFFS opened: " + result);
-  
-  // read setpoint.txt
-  File f1 = SPIFFS.open("/setpoint.txt", "r");  
-  if (!f1) {
-    Serial.println("File doesn't exist yet. Creating it");
-    savedata("setpoint.txt","0,0,0,0");
-  }else {
+
+  if (!SPIFFS.exists("/setpoint.txt")) {
+      Serial.println("File doesn't exist yet. Creating it");
+      Serial.println("Format the file system");
+      SPIFFS.format();
+      savedata("/setpoint.txt","0,0,0,0");
+      savedata("/schedule.txt","0");
+  }
+  else {
     readSetpoint();
-  }   
-  f1.close();
-
-  // read schedule.txt
-  File f2 = SPIFFS.open("/schedule.txt", "r");  
-  if (!f2) {
-    Serial.println("File doesn't exist yet. Creating it");
-    savedata("schedule.txt","0");
-  }else {
     readSchedule();
-  }   
-  f2.close();
-
+  }
 
   DateTime now = rtc.now();    
   setTime(now.hour(),now.minute(),now.second(),now.day(),now.month(),now.year()-2000); //(h,m,d,) set time to Saturday 8:29:00am Jan 1 2011
@@ -321,7 +326,7 @@ void readSchedule() {
       String line = f.readStringUntil('n');
       Serial.println(line);
       for (int i=0;i<8;i++){
-        String strtime = getValue(line,',',i+4);
+        String strtime = getValue(line,',',i);
         if (strtime.length() > 1) {
           sch_ab[i].h = getValue(strtime,':',0).toInt();
           sch_ab[i].m = getValue(strtime,':',1).toInt();
@@ -330,7 +335,7 @@ void readSchedule() {
           sch_ab[i].h = -1;
           sch_ab[i].m = -1;        
         }
-        strtime = getValue(line,',',i+12);
+        strtime = getValue(line,',',i+8);
         if (strtime.length() > 1) {
           sch_wt[i].h = getValue(strtime,':',0).toInt();
           sch_wt[i].m = getValue(strtime,':',1).toInt();
@@ -363,6 +368,8 @@ void savedata(String filename, String settings) {
     } 
     else {
       f.print(settings);
+      Serial.print("Data = "); Serial.println(settings);
+      Serial.print(filename);Serial.println("  save done.");
     }
     f.close();    
 } 

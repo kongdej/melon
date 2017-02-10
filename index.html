@@ -23,7 +23,9 @@
 
     <link href="https://fonts.googleapis.com/css?family=Montserrat:400,700" rel="stylesheet" type="text/css">
     <link href="https://fonts.googleapis.com/css?family=Lato:400,700,400italic,700italic" rel="stylesheet" type="text/css">
-
+    <link rel="stylesheet" type="text/css" media="screen"
+     href="http://tarruda.github.com/bootstrap-datetimepicker/assets/css/bootstrap-datetimepicker.min.css">
+    
     <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
     <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
     <!--[if lt IE 9]>
@@ -222,9 +224,22 @@
                                 <button type="submit" class="btn btn-success btn-lg" id="sch_submit">Submit</button>
                             </div>
                         </div>
-
-                   
                 </div>
+            </div>
+            <br>
+            <div class="row">
+                <div class="col-lg-8 col-lg-offset-2"> 
+                    <fieldset>
+                        <legend><i class="fa fa-fw fa-paw"></i>SET DATE TIME</legend>
+                        <div class="col-lg-4"> 
+                            <div>                                
+                            <label>DATE TIME (d/m/yyyy hh:mm) </label>
+                                <input type="text" class="form-control" placeholder="" id="datetime">
+                                <br>
+                                <button type="submit" class="btn btn-primary btn-lg" id="sdt_submit">SET</button>
+                            </div>
+                    </fieldset>
+                 </div>
             </div>
         </div>
     </section>
@@ -345,7 +360,8 @@
 
     <!-- jQuery -->
     <script src="vendor/jquery/jquery.min.js"></script>
-
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+    
     <script src="js/clockpicker.js"></script>
 
     <!-- Bootstrap Core JavaScript -->
@@ -360,6 +376,10 @@
 
     <!-- Theme JavaScript -->
     <script src="js/freelancer.min.js"></script>
+
+
+
+
 
     <!-- NETPIE -->
     <script src="js/raphael-2.1.4.min.js"></script>
