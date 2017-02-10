@@ -35,6 +35,10 @@ struct SchTime {
 SchTime sch_ab[8];
 SchTime sch_wt[8];
 
+AlarmId alarm_ab_id[8];
+AlarmId alarm_wt_id[8];
+
+
 void(* resetFunc)(void)=0;
 
 void onMsghandler(char *topic, uint8_t* msg, unsigned int msglen) {
@@ -55,13 +59,18 @@ void onMsghandler(char *topic, uint8_t* msg, unsigned int msglen) {
      ESP.restart();
   }
   
-  if (String(topic) == "/MELON/set") {
+  if (String(topic) == "/MELON/set/sp") {
      time_pa = getValue(stateStr, ',', 0).toInt();
      time_pb = getValue(stateStr, ',', 1).toInt();
      time_mv = getValue(stateStr, ',', 2).toInt();
      time_wv = getValue(stateStr, ',', 3).toInt();
+     savedata("setpoint.txt",stateStr);
+     readSetpoint();
+  }
+  
+  if (String(topic) == "/MELON/set/sch") {
      for (int i=0;i<8;i++){
-      String strtime = getValue(stateStr,',',i+4);
+      String strtime = getValue(stateStr,',',i);
       if (strtime.length() > 1) {
         sch_ab[i].h = getValue(strtime,':',0).toInt();
         sch_ab[i].m = getValue(strtime,':',1).toInt();
@@ -70,7 +79,7 @@ void onMsghandler(char *topic, uint8_t* msg, unsigned int msglen) {
         sch_ab[i].h = -1;
         sch_ab[i].m = -1;        
       }
-      strtime = getValue(stateStr,',',i+12);
+      strtime = getValue(stateStr,',',i+8);
       if (strtime.length() > 1) {
         sch_wt[i].h = getValue(strtime,':',0).toInt();
         sch_wt[i].m = getValue(strtime,':',1).toInt();
@@ -82,8 +91,8 @@ void onMsghandler(char *topic, uint8_t* msg, unsigned int msglen) {
 //      Serial.print(sch_ab[i].h);Serial.print(':');Serial.println(sch_ab[i].m);
 //      Serial.print(sch_wt[i].h);Serial.print(':');Serial.println(sch_wt[i].m);
      }
-      savedata(stateStr);
-      readdata();
+      savedata("schedule.txt",stateStr);
+      readSchedule();
   }
   
   if (String(topic) == "/MELON/wtr") doWatering(); 
@@ -161,14 +170,26 @@ void setup () {
   //SPTFFS
   bool result = SPIFFS.begin();
   Serial.println("SPIFFS opened: " + result);
-  File f = SPIFFS.open("/config.txt", "r");  
-  if (!f) {
+  
+  // read setpoint.txt
+  File f1 = SPIFFS.open("/setpoint.txt", "r");  
+  if (!f1) {
     Serial.println("File doesn't exist yet. Creating it");
-    savedata("0");
+    savedata("setpoint.txt","0,0,0,0");
   }else {
-    readdata();
+    readSetpoint();
   }   
-  f.close();
+  f1.close();
+
+  // read schedule.txt
+  File f2 = SPIFFS.open("/schedule.txt", "r");  
+  if (!f2) {
+    Serial.println("File doesn't exist yet. Creating it");
+    savedata("schedule.txt","0");
+  }else {
+    readSchedule();
+  }   
+  f2.close();
 
 
   DateTime now = rtc.now();    
@@ -177,9 +198,9 @@ void setup () {
   // create the alarms, to trigger at specific times
   for (int i=0;i<8;i++) {
     if (sch_ab[i].h != -1)
-      Alarm.alarmRepeat(sch_ab[i].h,sch_ab[i].m,0, doWatering);
+      alarm_ab_id[i] = Alarm.alarmRepeat(sch_ab[i].h,sch_ab[i].m,0, doWatering);
     if (sch_wt[i].h != -1)
-      Alarm.alarmRepeat(sch_wt[i].h,sch_wt[i].m,0, doWaterOnly);
+      alarm_wt_id[i] = Alarm.alarmRepeat(sch_wt[i].h,sch_wt[i].m,0, doWaterOnly);
   }
 }
 
@@ -279,9 +300,9 @@ void doWatering() {
   digitalWrite(relayPin[2],LOW);
 }
 
-void readdata() {
-    File f = SPIFFS.open("/config.txt", "r");
-    Serial.println("Reading coniguration.");
+void readSetpoint() {
+    File f = SPIFFS.open("/setpoint.txt", "r");
+    Serial.println("Reading setpoint..");
     while(f.available()) {
       String line = f.readStringUntil('n');
       Serial.println(line);
@@ -289,7 +310,16 @@ void readdata() {
       time_pb = getValue(line, ',', 1).toInt();
       time_mv = getValue(line, ',', 2).toInt();
       time_wv = getValue(line, ',', 3).toInt();
+    }   
+    f.close();
+}
 
+void readSchedule() {
+    File f = SPIFFS.open("/schedule.txt", "r");
+    Serial.println("Reading schedule.");
+    while(f.available()) {
+      String line = f.readStringUntil('n');
+      Serial.println(line);
       for (int i=0;i<8;i++){
         String strtime = getValue(line,',',i+4);
         if (strtime.length() > 1) {
@@ -314,18 +344,20 @@ void readdata() {
 
     // create the alarms, to trigger at specific times
     for (int i=0;i<8;i++) {
-      if (sch_ab[i].h != -1)
-        Alarm.alarmRepeat(sch_ab[i].h,sch_ab[i].m,0, doWatering);
-      if (sch_wt[i].h != -1)
-        Alarm.alarmRepeat(sch_wt[i].h,sch_wt[i].m,0, doWaterOnly);
-    }
-
-    
+      if (sch_ab[i].h != -1) {
+        Alarm.free(alarm_ab_id[i]);
+        alarm_ab_id[i] = Alarm.alarmRepeat(sch_ab[i].h,sch_ab[i].m,0, doWatering);
+      }
+      if (sch_wt[i].h != -1) {
+        Alarm.free(alarm_wt_id[i]);
+        alarm_wt_id[i] = Alarm.alarmRepeat(sch_wt[i].h,sch_wt[i].m,0, doWaterOnly);
+      }
+    }    
     f.close();
 }
 
-void savedata(String settings) {
-    File f = SPIFFS.open("/config.txt", "w");
+void savedata(String filename, String settings) {
+    File f = SPIFFS.open(filename, "w");
     if (!f) {
       Serial.println("file creation failed");
     } 

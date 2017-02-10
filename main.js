@@ -25,10 +25,25 @@
        document.getElementById("data").innerHTML = '&nbsp;<i class="fa fa-bell-o"></i> '+topic+' <i class="fa fa-ellipsis-h"></i> ' + msg;
     }
 
+    function az(str) {
+      if (str.length == 1)
+        return '0'+str;
+      else 
+        return str
+
+    }
+
     microgear.on('message',function(topic,msg) {
         //printMsg(topic,msg);
         if (topic == "/MELON/time") {
-            $('#time').text(msg);
+            var txts = msg.split(' ');
+            var dates = txts[0].split('/');
+            var times = txts[1].split(':');
+            var str = az(times[0])+':'+az(times[1])+':'+az(times[2])+"<br>"
+            str += dates[2]+'/'+dates[1]+'/'+dates[0];
+            //console.log(str);
+            $('#time').html(str);
+
             //printMsg(topic,msg);
         }
         
@@ -50,7 +65,7 @@
          }
          if (topic == "/MELON/status/sch/ab") {
            var vals = msg.split(",");
-           printMsg(topic,msg);         
+//           printMsg(topic,msg);         
            $("#ab1").attr("value", vals[0]);
            $("#ab2").attr("value", vals[1]);
            $("#ab3").attr("value", vals[2]);
@@ -86,12 +101,12 @@
     });
 
     microgear.on('present', function(event) {
-//        printMsg(event.alias,event.type);
+        printMsg(event.alias,event.type);
         console.log(event);
     });
 
     microgear.on('absent', function(event) {
-//        printMsg(event.alias,event.type);
+        printMsg(event.alias,event.type);
         console.log(event);
     });
 
@@ -149,22 +164,18 @@
     });
 
     $("#sp_submit").click(function () {
+      var settings = $('#pa').val()+','+$('#pb').val()+','+$('#mv').val()+','+$('#wv').val();
+      console.log(settings);
+      microgear.publish("/set/sp",settings);
+    });
+
+    $("#sch_submit").click(function () {
       var sch_ab = $('#ab1').val()+','+$('#ab2').val()+','+$('#ab3').val()+','+$('#ab4').val()+','+$('#ab5').val()+','+$('#ab6').val()+','+$('#ab7').val()+','+$('#ab8').val();
       var sch_wt = $('#wt1').val()+','+$('#wt2').val()+','+$('#wt3').val()+','+$('#wt4').val()+','+$('#wt5').val()+','+$('#wt6').val()+','+$('#wt7').val()+','+$('#wt8').val();
-      var settings = $('#pa').val()+','+$('#pb').val()+','+$('#mv').val()+','+$('#wv').val()+',';
-      settings += sch_ab+',';
+      settings = sch_ab+',';
       settings += sch_wt;
       console.log(settings);
-      microgear.publish("/set",settings);
-      
-//        microgear.publish("/set/pa",$('#pa').val());
-//        microgear.publish("/set/pb",$('#pb').val());
-//        microgear.publish("/set/mv",$('#mv').val());
-//        microgear.publish("/set/wv",$('#wv').val());
-//        var sch_ab = $('#ab1').val()+','+$('#ab2').val()+','+$('#ab3').val()+','+$('#ab4').val()+','+$('#ab5').val()+','+$('#ab6').val()+','+$('#ab7').val()+','+$('#ab8').val();
-//        microgear.publish("/set/sch/ab",sch_ab);
- //       var sch_wt = $('#wt1').val()+','+$('#wt2').val()+','+$('#wt3').val()+','+$('#wt4').val()+','+$('#wt5').val()+','+$('#wt6').val()+','+$('#wt7').val()+','+$('#wt8').val();
- //       microgear.publish("/set/sch/wt",sch_wt);
+      microgear.publish("/set/sch",settings);
     });
 
 $('.clockpicker').clockpicker();
