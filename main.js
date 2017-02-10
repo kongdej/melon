@@ -50,7 +50,7 @@
          }
          if (topic == "/MELON/status/sch/ab") {
            var vals = msg.split(",");
-          // printMsg(topic,msg);         
+           printMsg(topic,msg);         
            $("#ab1").attr("value", vals[0]);
            $("#ab2").attr("value", vals[1]);
            $("#ab3").attr("value", vals[2]);
@@ -141,22 +141,30 @@
     });
 
     $("#wtr").click(function () {
-        console.log("wtr");
         microgear.publish ("/wtr", "1");
     });
 
+    $("#rst").click(function () {
+        microgear.publish ("/reset", "1");
+    });
+
     $("#sp_submit").click(function () {
-        console.log($('#pa').val()+','+$('#pb').val()+','+$('#mv').val()+','+$('#mv').val());
-        microgear.publish("/set/pa",$('#pa').val());
-        microgear.publish("/set/pb",$('#pb').val());
-        microgear.publish("/set/mv",$('#mv').val());
-        microgear.publish("/set/wv",$('#wv').val());
-        var sch_ab = $('#ab1').val()+','+$('#ab2').val()+','+$('#ab3').val()+','+$('#ab4').val()+','+$('#ab5').val()+','+$('#ab6').val()+','+$('#ab7').val()+','+$('#ab8').val();
-        microgear.publish("/set/sch/ab",sch_ab);
-        var sch_wt = $('#wt1').val()+','+$('#wt2').val()+','+$('#wt3').val()+','+$('#wt4').val()+','+$('#wt5').val()+','+$('#wt6').val()+','+$('#wt7').val()+','+$('#wt8').val();
-        microgear.publish("/set/sch/wt",sch_wt);
-        console.log(sch_ab);
-        console.log(sch_wt);
+      var sch_ab = $('#ab1').val()+','+$('#ab2').val()+','+$('#ab3').val()+','+$('#ab4').val()+','+$('#ab5').val()+','+$('#ab6').val()+','+$('#ab7').val()+','+$('#ab8').val();
+      var sch_wt = $('#wt1').val()+','+$('#wt2').val()+','+$('#wt3').val()+','+$('#wt4').val()+','+$('#wt5').val()+','+$('#wt6').val()+','+$('#wt7').val()+','+$('#wt8').val();
+      var settings = $('#pa').val()+','+$('#pb').val()+','+$('#mv').val()+','+$('#wv').val()+',';
+      settings += sch_ab+',';
+      settings += sch_wt;
+      console.log(settings);
+      microgear.publish("/set",settings);
+      
+//        microgear.publish("/set/pa",$('#pa').val());
+//        microgear.publish("/set/pb",$('#pb').val());
+//        microgear.publish("/set/mv",$('#mv').val());
+//        microgear.publish("/set/wv",$('#wv').val());
+//        var sch_ab = $('#ab1').val()+','+$('#ab2').val()+','+$('#ab3').val()+','+$('#ab4').val()+','+$('#ab5').val()+','+$('#ab6').val()+','+$('#ab7').val()+','+$('#ab8').val();
+//        microgear.publish("/set/sch/ab",sch_ab);
+ //       var sch_wt = $('#wt1').val()+','+$('#wt2').val()+','+$('#wt3').val()+','+$('#wt4').val()+','+$('#wt5').val()+','+$('#wt6').val()+','+$('#wt7').val()+','+$('#wt8').val();
+ //       microgear.publish("/set/sch/wt",sch_wt);
     });
 
 $('.clockpicker').clockpicker();

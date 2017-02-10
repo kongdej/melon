@@ -2,8 +2,8 @@
 #include <MicroGear.h>
 #include <ArduinoOTA.h>
 
-const char* ssid     = "ZAB";
-const char* password = "Gearman1";
+const char* ssid     = "ABZ";
+const char* password = "gearman1";
 #define APPID       "MELON"
 #define GEARKEY     "oNA35ZOOws6QDtr"
 #define GEARSECRET  "tJOFJOfsDx7PINKwWANIKjK42"

@@ -2,6 +2,9 @@
 #include <MicroGear.h>
 #include <ArduinoOTA.h>
 #include <FS.h>
+#include <TimeLib.h>
+#include <TimeAlarms.h>
+
 
 const char* ssid     = "ZAB";
 const char* password = "Gearman1";
@@ -20,15 +23,19 @@ MicroGear microgear(client);
 RTC_DS3231 rtc;
 
 int timer = 0;
-int relayPin[4] =  {D5,D6,D8,D7};
+int relayPin[4] =  {D5,D6,D7,D8};
 int time_pa = 0;
 int time_pb = 0;
 int time_mv = 0;
 int time_wv = 0;
-String sch_ab;
-String sch_wt;
-String sab[8];
-String swt[8];
+struct SchTime {
+  int h;
+  int m;
+};
+SchTime sch_ab[8];
+SchTime sch_wt[8];
+
+void(* resetFunc)(void)=0;
 
 void onMsghandler(char *topic, uint8_t* msg, unsigned int msglen) {
   char strState[msglen];
@@ -43,12 +50,42 @@ void onMsghandler(char *topic, uint8_t* msg, unsigned int msglen) {
      int state = stateStr.substring(1).toInt();     
      digitalWrite(relayPin[no],state ? HIGH:LOW);
   }
-  if (String(topic) == "/MELON/set/pa") time_pa = stateStr.toInt();
-  if (String(topic) == "/MELON/set/pb") time_pb = stateStr.toInt();
-  if (String(topic) == "/MELON/set/mv") time_mv = stateStr.toInt();
-  if (String(topic) == "/MELON/set/wv") time_wv = stateStr.toInt();
-  if (String(topic) == "/MELON/set/sch/ab") sch_ab = stateStr;
-  if (String(topic) == "/MELON/set/sch/wt") sch_wt = stateStr;
+  
+  if (String(topic) == "/MELON/reset"){
+     ESP.restart();
+  }
+  
+  if (String(topic) == "/MELON/set") {
+     time_pa = getValue(stateStr, ',', 0).toInt();
+     time_pb = getValue(stateStr, ',', 1).toInt();
+     time_mv = getValue(stateStr, ',', 2).toInt();
+     time_wv = getValue(stateStr, ',', 3).toInt();
+     for (int i=0;i<8;i++){
+      String strtime = getValue(stateStr,',',i+4);
+      if (strtime.length() > 1) {
+        sch_ab[i].h = getValue(strtime,':',0).toInt();
+        sch_ab[i].m = getValue(strtime,':',1).toInt();
+      }
+      else {
+        sch_ab[i].h = -1;
+        sch_ab[i].m = -1;        
+      }
+      strtime = getValue(stateStr,',',i+12);
+      if (strtime.length() > 1) {
+        sch_wt[i].h = getValue(strtime,':',0).toInt();
+        sch_wt[i].m = getValue(strtime,':',1).toInt();
+      }
+      else {
+        sch_wt[i].h = -1;
+        sch_wt[i].m = -1;        
+      }
+//      Serial.print(sch_ab[i].h);Serial.print(':');Serial.println(sch_ab[i].m);
+//      Serial.print(sch_wt[i].h);Serial.print(':');Serial.println(sch_wt[i].m);
+     }
+      savedata(stateStr);
+      readdata();
+  }
+  
   if (String(topic) == "/MELON/wtr") doWatering(); 
 }
 
@@ -58,6 +95,7 @@ void onConnected(char *attribute, uint8_t* msg, unsigned int msglen) {
   microgear.subscribe("/cmd");
   microgear.subscribe("/set/#");
   microgear.subscribe("/wtr");
+  microgear.subscribe("/reset");
 }
 
 
@@ -126,12 +164,25 @@ void setup () {
   File f = SPIFFS.open("/config.txt", "r");  
   if (!f) {
     Serial.println("File doesn't exist yet. Creating it");
-    savedata();
+    savedata("0");
   }else {
     readdata();
   }   
   f.close();
+
+
+  DateTime now = rtc.now();    
+  setTime(now.hour(),now.minute(),now.second(),now.day(),now.month(),now.year()-2000); //(h,m,d,) set time to Saturday 8:29:00am Jan 1 2011
+
+  // create the alarms, to trigger at specific times
+  for (int i=0;i<8;i++) {
+    if (sch_ab[i].h != -1)
+      Alarm.alarmRepeat(sch_ab[i].h,sch_ab[i].m,0, doWatering);
+    if (sch_wt[i].h != -1)
+      Alarm.alarmRepeat(sch_wt[i].h,sch_wt[i].m,0, doWaterOnly);
+  }
 }
+
 
 void loop(){
   ArduinoOTA.handle();
@@ -155,10 +206,31 @@ void loop(){
         microgear.publish("/status",statusStr);
         
         // publist satatus/sch/ab
-        microgear.publish("/status/sch/ab",sch_ab);
+        String schstr="";
+        for (int i=0;i<7;i++) {
+          if (sch_ab[i].h != -1 )
+            schstr += String(sch_ab[i].h)+':'+String(sch_ab[i].m)+',';
+          else 
+            schstr += ',';
+        }
+        if (sch_ab[7].h != -1)
+          schstr += String(sch_ab[7].h)+':'+String(sch_ab[7].m);
+        //Serial.println(schstr);
+
+        microgear.publish("/status/sch/ab",schstr);
        
         // publist satatus/sch/wt
-        microgear.publish("/status/sch/wt",sch_wt);
+        schstr="";
+        for (int i=0;i<7;i++) {
+          if (sch_wt[i].h != -1 )          
+            schstr += String(sch_wt[i].h)+':'+String(sch_wt[i].m)+',';
+          else 
+            schstr += ',';
+        }
+        if (sch_wt[7].h != -1)
+          schstr += String(sch_wt[7].h)+':'+String(sch_wt[7].m);
+  
+        microgear.publish("/status/sch/wt",schstr);
         
         timer = 0;
       } 
@@ -176,28 +248,35 @@ void loop(){
         timer += 100;
       }
   }
-  delay(100);
+  Alarm.delay(100);
+}
+
+void doWaterOnly() {
+  Serial.println("Water Only");
+  digitalWrite(relayPin[3],HIGH);
+  delay(time_wv*1000);
+  digitalWrite(relayPin[3],LOW);  
 }
 
 void doWatering() {
-      //pump A start
-      Serial.println("Watering ....");
-      digitalWrite(relayPin[0],HIGH);
-      delay(time_pa*1000);
-      digitalWrite(relayPin[0],LOW);
-      // main valve start
-      digitalWrite(relayPin[2],HIGH);
-      delay(time_mv/2*1000);
-      digitalWrite(relayPin[2],LOW);
-      
-      //pump B start
-      digitalWrite(relayPin[1],HIGH);
-      delay(time_pa*1000);
-      digitalWrite(relayPin[1],LOW);
-      // main valve start
-      digitalWrite(relayPin[2],HIGH);
-      delay(time_mv/2*1000);
-      digitalWrite(relayPin[2],LOW);
+  //pump A start
+  Serial.println("Watering ....");
+  digitalWrite(relayPin[0],HIGH);
+  delay(time_pa*1000);
+  digitalWrite(relayPin[0],LOW);
+  // main valve start
+  digitalWrite(relayPin[2],HIGH);
+  delay(time_mv/2*1000);
+  digitalWrite(relayPin[2],LOW);
+  
+  //pump B start
+  digitalWrite(relayPin[1],HIGH);
+  delay(time_pa*1000);
+  digitalWrite(relayPin[1],LOW);
+  // main valve start
+  digitalWrite(relayPin[2],HIGH);
+  delay(time_mv/2*1000);
+  digitalWrite(relayPin[2],LOW);
 }
 
 void readdata() {
@@ -210,48 +289,64 @@ void readdata() {
       time_pb = getValue(line, ',', 1).toInt();
       time_mv = getValue(line, ',', 2).toInt();
       time_wv = getValue(line, ',', 3).toInt();
-      for (int i=4; i<12; i++) sab[i] = getValue(line, ',', i);
-      for (int i=12; i<20;i++) swt[i] = getValue(line, ',', i);
+
+      for (int i=0;i<8;i++){
+        String strtime = getValue(line,',',i+4);
+        if (strtime.length() > 1) {
+          sch_ab[i].h = getValue(strtime,':',0).toInt();
+          sch_ab[i].m = getValue(strtime,':',1).toInt();
+        }
+        else {
+          sch_ab[i].h = -1;
+          sch_ab[i].m = -1;        
+        }
+        strtime = getValue(line,',',i+12);
+        if (strtime.length() > 1) {
+          sch_wt[i].h = getValue(strtime,':',0).toInt();
+          sch_wt[i].m = getValue(strtime,':',1).toInt();
+        }
+        else {
+          sch_wt[i].h = -1;
+          sch_wt[i].m = -1;        
+        }
+      }
     }
+
+    // create the alarms, to trigger at specific times
+    for (int i=0;i<8;i++) {
+      if (sch_ab[i].h != -1)
+        Alarm.alarmRepeat(sch_ab[i].h,sch_ab[i].m,0, doWatering);
+      if (sch_wt[i].h != -1)
+        Alarm.alarmRepeat(sch_wt[i].h,sch_wt[i].m,0, doWaterOnly);
+    }
+
+    
     f.close();
 }
 
-void savedata() {
+void savedata(String settings) {
     File f = SPIFFS.open("/config.txt", "w");
     if (!f) {
       Serial.println("file creation failed");
     } 
     else {
-      f.print(time_pa);f.print(",");
-      f.print(time_pb);f.print(",");
-      f.print(time_mv);f.print(",");
-      f.print(time_wv);f.print(",");
-      f.print(sch_ab) ;f.print(",");
-      f.println(sch_wt);
+      f.print(settings);
     }
     f.close();    
 } 
 
-String getValue(String data, char separator, int index)
-{
+String getValue(String data, char separator, int index){
     int maxIndex = data.length() - 1;
     int j = 0;
     String chunkVal = "";
-
-    for (int i = 0; i <= maxIndex && j <= index; i++)
-    {
+    for (int i = 0; i <= maxIndex && j <= index; i++){
         chunkVal.concat(data[i]);
-
-        if (data[i] == separator)
-        {
+        if (data[i] == separator){
             j++;
-
-            if (j > index)
-            {
+            if (j > index){
                 chunkVal.trim();
                 return chunkVal;
             }
-
             chunkVal = "";
         }
         else if ((i == maxIndex) && (j < index)) {
