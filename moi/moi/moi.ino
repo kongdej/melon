@@ -6,8 +6,8 @@
 #include <TimeAlarms.h>
 
 
-const char* ssid     = "ABZ";
-const char* password = "gearman1";
+const char* ssid     = "ZAB";
+const char* password = "Gearman1";
 #define APPID       "MELON"
 #define GEARKEY     "oNA35ZOOws6QDtr"
 #define GEARSECRET  "tJOFJOfsDx7PINKwWANIKjK42"
@@ -109,49 +109,9 @@ void onMsghandler(char *topic, uint8_t* msg, unsigned int msglen) {
     setTime(now.hour(),now.minute(),now.second(),now.day(),now.month(),now.year()-2000); //(h,m,d,) set time to Saturday 8:29:00am Jan 1 2011
   }
   
-  if (String(topic) == "/MELON/wtr") doWatering(); 
-}
-
-void onConnected(char *attribute, uint8_t* msg, unsigned int msglen) {
-  Serial.println("Connected to NETPIE...");
-  microgear.setAlias(ALIAS);
-  microgear.subscribe("/cmd");
-  microgear.subscribe("/set/#");
-  microgear.subscribe("/wtr");
-  microgear.subscribe("/reset");
-}
-
-
-void setup () {
-  Serial.begin(9600);
+  if (String(topic) == "/MELON/wtr") doWatering();
   
-  // NETPIE
-  microgear.on(MESSAGE,onMsghandler);
-  microgear.on(CONNECTED,onConnected);
- 
-}
-
-void loop(){
-  ArduinoOTA.handle();
-  if (microgear.connected()) {
-      microgear.loop();
-      if (timer >= 1000) {
-        // publish datetime
-        DateTime now = rtc.now();    
-        String timestr = String(now.year())+'/'+String(now.month())+'/'+String(now.day())+' '+String(now.hour())+':'+String(now.minute())+':'+String(now.second());  
-        microgear.publish("/time",timestr);
-
-        // publish status and settings
-        String statusStr = String(digitalRead(relayPin[0])) + ',';
-        statusStr += String(digitalRead(relayPin[1]))+',';
-        statusStr += String(digitalRead(relayPin[2]))+',';
-        statusStr += String(digitalRead(relayPin[3]))+',';
-        statusStr += String(time_pa)+',';
-        statusStr += String(time_pb)+',';
-        statusStr += String(time_mv)+',';
-        statusStr += String(time_wv);
-        microgear.publish("/status",statusStr);
-        
+  if (String(topic) == "/MELON/reload") {
         // publist satatus/sch/ab
         String schstr="";
         for (int i=0;i<7;i++) {
@@ -162,7 +122,7 @@ void loop(){
         }
         if (sch_ab[7].h != -1)
           schstr += String(sch_ab[7].h)+':'+String(sch_ab[7].m);
-        //Serial.println(schstr);
+        Serial.println(schstr);
 
         microgear.publish("/status/sch/ab",schstr);
        
@@ -177,8 +137,113 @@ void loop(){
         if (sch_wt[7].h != -1)
           schstr += String(sch_wt[7].h)+':'+String(sch_wt[7].m);
   
+        Serial.println(schstr);
         microgear.publish("/status/sch/wt",schstr);
-        
+  }
+}
+
+void onConnected(char *attribute, uint8_t* msg, unsigned int msglen) {
+  Serial.println("Connected to NETPIE...");
+  microgear.setAlias(ALIAS);
+  microgear.subscribe("/cmd");
+  microgear.subscribe("/set/#");
+  microgear.subscribe("/wtr");
+  microgear.subscribe("/reset");
+  microgear.subscribe("/reload");
+}
+
+
+void setup () {
+  // NETPIE
+  microgear.on(MESSAGE,onMsghandler);
+  microgear.on(CONNECTED,onConnected);
+  
+  Serial.begin(9600);
+ if (WiFi.begin(ssid, password)) {
+    while (WiFi.status() != WL_CONNECTED) {
+      delay(500);
+      Serial.print(".");
+    }
+    
+    ArduinoOTA.onStart([]() {
+      Serial.println("Start");
+    });
+    ArduinoOTA.onEnd([]() {
+      Serial.println("\nEnd");
+    });
+    ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
+      Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
+    });
+    ArduinoOTA.onError([](ota_error_t error) {
+      Serial.printf("Error[%u]: ", error);
+      if (error == OTA_AUTH_ERROR) Serial.println("Auth Failed");
+      else if (error == OTA_BEGIN_ERROR) Serial.println("Begin Failed");
+      else if (error == OTA_CONNECT_ERROR) Serial.println("Connect Failed");
+      else if (error == OTA_RECEIVE_ERROR) Serial.println("Receive Failed");
+      else if (error == OTA_END_ERROR) Serial.println("End Failed");
+    });
+    ArduinoOTA.begin();
+    
+    Serial.println("WiFi connected");
+    Serial.println("IP address: ");
+    Serial.println(WiFi.localIP());
+
+    //uncomment the line below if you want to reset token -->
+    //microgear.resetToken();
+    microgear.init(GEARKEY, GEARSECRET, ALIAS);
+    microgear.connect(APPID);
+  }
+  
+  if (! rtc.begin()) {
+    Serial.println("Couldn't find RTC");
+    while (1);
+  }
+
+  if (rtc.lostPower()) {
+    Serial.println("RTC lost power, lets set the time!");
+  }
+
+  DateTime now = rtc.now();    
+  setTime(now.hour(),now.minute(),now.second(),now.day(),now.month(),now.year()-2000); // set time to Saturday 8:29:00am Jan 1 2011
+
+  for (int i=0;i<4;i++)
+    pinMode(relayPin[i], OUTPUT);
+
+ //SPTFFS
+  bool result = SPIFFS.begin();
+  Serial.println("SPIFFS opened: " + result);
+  if(SPIFFS.exists("/setpoint.txt")) {
+    readSetpoint();
+    readSchedule();  
+  }
+  else {
+    savedata("/setpoint.txt","0");
+    savedata("/schedule.txt","0");
+  } 
+}
+
+void loop(){
+  ArduinoOTA.handle();
+  if (microgear.connected()) {
+      microgear.loop();
+      if (timer >= 1000) {
+        // publish datetime
+        // DateTime now = rtc.now();    
+        // String timestr = String(now.year())+'/'+String(now.month())+'/'+String(now.day())+' '+String(now.hour())+':'+String(now.minute())+':'+String(now.second());  
+        String timestr = String(year())+'/'+String(month())+'/'+String(day())+' '+String(hour())+':'+String(minute())+':'+String(second());  
+        Serial.println(timestr);
+        microgear.publish("/time",timestr);
+      
+        // publish status and settings
+        String statusStr = String(digitalRead(relayPin[0])) + ',';
+        statusStr += String(digitalRead(relayPin[1]))+',';
+        statusStr += String(digitalRead(relayPin[2]))+',';
+        statusStr += String(digitalRead(relayPin[3]))+',';
+        statusStr += String(time_pa)+',';
+        statusStr += String(time_pb)+',';
+        statusStr += String(time_mv)+',';
+        statusStr += String(time_wv);
+        microgear.publish("/status",statusStr);
         timer = 0;
       } 
       else {
@@ -271,12 +336,14 @@ void readSchedule() {
     // create the alarms, to trigger at specific times
     for (int i=0;i<8;i++) {
       if (sch_ab[i].h != -1) {
-        Alarm.free(alarm_ab_id[i]);
+        if (alarm_ab_id[i]) Alarm.free(alarm_ab_id[i]);
         alarm_ab_id[i] = Alarm.alarmRepeat(sch_ab[i].h,sch_ab[i].m,0, doWatering);
+        Serial.printf("[%d] Set Watering AB at %d:%d ",alarm_ab_id[i],sch_ab[i].h,sch_ab[i].m);Serial.println();
       }
       if (sch_wt[i].h != -1) {
-        Alarm.free(alarm_wt_id[i]);
+        if (alarm_wt_id[i]) Alarm.free(alarm_wt_id[i]);
         alarm_wt_id[i] = Alarm.alarmRepeat(sch_wt[i].h,sch_wt[i].m,0, doWaterOnly);
+        Serial.printf("[%d] Set Watering Only at %d:%d ",alarm_wt_id[i],sch_wt[i].h,sch_wt[i].m);Serial.println();
       }
     }    
     f.close();

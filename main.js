@@ -55,7 +55,7 @@
         
         if (topic == "/MELON/status") {
            var vals = msg.split(",");
-//           printMsg(topic,msg);
+      //     printMsg(topic,msg);
            if (vals[0] == '1') $('#r1_status').text('START'); else $('#r1_status').text('STOP');                
            if (vals[1] == '1') $('#r2_status').text('START'); else $('#r2_status').text('STOP');                
            if (vals[2] == '1') $('#r3_status').text('OPEN'); else $('#r3_status').text('CLOSE');                
@@ -188,6 +188,11 @@
       var datetime = $('#datetime').val();
       console.log(datetime);
       microgear.publish("/set/datetime",datetime);
+    });
+
+    $("#schreload_submit").click(function () {
+      console.log("Reload schedule");
+      microgear.publish("/reload","1");
     });
 
 $('.clockpicker').clockpicker();
